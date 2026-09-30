@@ -6,7 +6,12 @@ A simple contract that can receive tokens (like USDC) and lets only the owner mo
 - `owner()`: shows who owns the vault
 - `balance(token)`: shows how much of a token the vault holds
 - `withdraw(token, to, amount)`: owner only; sends an amount to any address
-- `withdraw_all(token, to)`: owner only; sends everything
+- `withdraw_all(token, to)`: owner only; sends everything (fails with `InvalidAmount` if the vault is empty)
+- `bump()`: anyone can call; renews the vault's storage so it isn't archived. Owner actions renew it automatically.
+
+Events: `withdraw` (token, to, amount) and `owner_changed` (old_owner, new_owner).
+
+Note: `payment_vault.wasm` in this repo was built from the previous version. Rebuild with `stellar contract build` (stellar-cli v25.2.0+) for these changes.
 - `set_owner(new_owner)`: owner only; hands over control (the new owner must also sign)
 
 ## Build and test
