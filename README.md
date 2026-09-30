@@ -11,7 +11,13 @@ A simple contract that can receive tokens (like USDC) and lets only the owner mo
 
 Events: `withdraw` (token, to, amount) and `owner_changed` (old_owner, new_owner).
 
-Note: `payment_vault.wasm` in this repo was built from the previous version. Rebuild with `stellar contract build` (stellar-cli v25.2.0+) for these changes.
+`payment_vault.wasm` in this repo is built from this source with Rust 1.98.1 (from `rust-toolchain.toml`) and `stellar contract build` (stellar-cli 28.1.0). SHA-256:
+
+```
+cc1a5736cb82257377e20f077deaceb245079562440d4f99e297a9537c19d857
+```
+
+Verify: `stellar contract build && sha256sum target/wasm32v1-none/release/payment_vault.wasm`
 - `set_owner(new_owner)`: owner only; hands over control (the new owner must also sign)
 
 ## Build and test
