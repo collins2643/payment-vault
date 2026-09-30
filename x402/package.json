@@ -5,7 +5,7 @@
     "start": "tsx server.ts"
   },
   "dependencies": {
-    "@stellar/stellar-sdk": "latest",
+    "@stellar/stellar-sdk": "17.1.0",
     "@x402/core": "2.27.0",
     "@x402/express": "2.27.0",
     "@x402/stellar": "2.27.0",

@@ -20,7 +20,7 @@ stellar contract build   # needs stellar-cli v25.2.0 or newer
 stellar contract deploy --wasm target/wasm32v1-none/release/payment_vault.wasm \
   --source <your-key> --network testnet -- --owner <your G... address>
 ```
-Use the printed C... address as x402 `payTo`. Before going live, send it a tiny amount (Coinbase needs this).
+Use the printed C... address as x402 `payTo`. Before the first x402 payment, send the vault a tiny amount of USDC (e.g. 0.0001): a vault that has never held USDC rejects its first payment with `fee_exceeds_maximum`, whichever facilitator you use.
 
 ## Withdraw
 ```
@@ -33,8 +33,8 @@ Not audited. Test on testnet before using real money, and keep the owner key saf
 ## Repository layout
 - `src/lib.rs` — Soroban Payment Vault contract (with unit tests)
 - `payment_vault.wasm` — Testnet build of the contract
-- `x402/` — x402 server config that sends Stellar payments to the vault (`payTo` = vault `C...`, `asset` = USDC SAC)
-- `express-server/` — multi-network x402 Express server (EVM, Solana, Algorand, Stellar)
+- `x402/` — x402 server config that sends Stellar payments to the vault (`payTo` = vault `C...`, `asset` = USDC SAC). Run: `cd x402 && cp .env.example .env && npm install && npm start` (defaults to testnet)
+- `express-server/` — multi-network x402 Express server (EVM, Solana, Algorand, Stellar). Run: `cd express-server && cp .env.example .env && npm install && npm start`
 - `docs/MAINNET-CHECKLIST.md` — steps before accepting real payments
 
 ## Testnet deployment
