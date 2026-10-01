@@ -46,6 +46,7 @@ Not audited. Test on testnet before using real money, and keep the owner key saf
 - `payment_vault.wasm` — Testnet build of the contract
 - `x402/` — x402 server config that sends Stellar payments to the vault (`payTo` = vault `C...`, `asset` = USDC SAC). Run: `cd x402 && cp .env.example .env && npm install && npm start` (defaults to testnet)
 - `express-server/` — multi-network x402 Express server (EVM, Solana, Algorand, Stellar). Run: `cd express-server && cp .env.example .env && npm install && npm start`
+- `demo/setup-trustline.mjs` — one-time payer setup: Friendbot funding, Circle Testnet USDC trustline (`GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`), and verification of an active 0-balance trustline. Run before `pay.mjs`: `cd demo && npm install && PAYER_SECRET=$(stellar keys show demo-payer) node setup-trustline.mjs` (omit `PAYER_SECRET` to generate a new account). Then fund the payer from Circle's Testnet faucet.
 - `demo/pay.mjs` — paying x402 client for the Testnet demo. Run: `cd demo && npm install && PAYER_SECRET=$(stellar keys show demo-payer) node pay.mjs 3` (secret comes from the environment only)
 - `docs/MAINNET-CHECKLIST.md` — steps before accepting real payments
 
