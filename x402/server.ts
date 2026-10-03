@@ -64,6 +64,7 @@ app.use(paymentMiddleware(
   },
   new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme()),
 ));
+app.get("/health", (_req, res) => res.send("ok")); // free route for Railway health checks
 app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
 
 const PORT = Number(process.env.PORT ?? 4021);
