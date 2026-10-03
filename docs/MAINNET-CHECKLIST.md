@@ -5,7 +5,7 @@ Scope: moving the x402 Express server and Soroban Payment Vault from testnet to 
 ## 1. Contract readiness
 - [ ] Independent security audit of the Payment Vault contract completed and findings fixed.
 - [ ] Final WASM rebuilt from the audited source; record its hash (testnet build: `19b4a5da…b870`) and confirm the deployed hash matches.
-- [ ] Unit tests pass on the audited build (withdraw, withdraw_all, set_owner, unauthorized rejection, invalid/excess amounts).
+- [ ] Unit tests pass on the audited build (withdraw, withdraw_all, transfer_ownership, token allowlist, unauthorized rejection, invalid/excess amounts, TTL extension).
 - [ ] Testnet pay-then-withdraw run (`scripts/e2e-pay-withdraw.mjs`) passes on the exact audited WASM.
 
 ## 2. Owner and keys
@@ -15,7 +15,7 @@ Scope: moving the x402 Express server and Soroban Payment Vault from testnet to 
 - [ ] Owner account funded with enough XLM for reserves and Soroban fees (withdrawals, TTL extensions).
 
 ## 3. Deploy the vault
-- [ ] Deploy with `__constructor(owner = <mainnet owner G…>)` on `stellar:pubnet`.
+- [ ] Deploy with `__constructor(owner = <mainnet owner G…>, allowed_tokens = [<mainnet USDC SAC>])` on `stellar:pubnet`.
 - [ ] Verify on-chain: `owner()` returns the intended address, and the contract's WASM hash matches the audited build.
 - [ ] Extend instance and code TTL so the contract doesn't get archived; set a reminder to renew.
 - [ ] Seed the vault with a tiny USDC transfer (e.g. 0.0001) **before** the first x402 payment; otherwise settlement fails with `invalid_exact_stellar_payload_fee_exceeds_maximum`.
