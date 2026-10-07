@@ -1,0 +1,15 @@
+{
+  "name": "payment-vault",
+  "private": true,
+  "description": "Root tooling for Cloudflare builds (Wrangler pinned so npx does not fetch a fresh copy each build)",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "preview": "wrangler preview"
+  },
+  "devDependencies": {
+    "wrangler": "4.148.0"
+  }
+}
