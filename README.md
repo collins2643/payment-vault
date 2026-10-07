@@ -57,12 +57,39 @@ Not audited. Test on testnet before using real money, and keep the owner key saf
 - `demo/pay.mjs` — paying x402 client for the Testnet demo. Run: `cd demo && npm install && PAYER_SECRET=$(stellar keys show demo-payer) node pay.mjs 3` (secret comes from the environment only)
 - `docs/MAINNET-CHECKLIST.md` — steps before accepting real payments
 
+## Going live on Mainnet
+
+The x402 server and demo scripts switch to Mainnet with one variable: `STELLAR_NETWORK=mainnet`. On Mainnet the server uses Circle USDC (`CCW67TSZ…MI75`), Horizon/RPC for `pubnet`, and the Built on Stellar / OpenZeppelin facilitator (`https://channels.openzeppelin.com/x402`).
+
+Safety checks at startup (the server refuses to start if any fail):
+- `FACILITATOR_API_KEY` is set (generate at https://channels.openzeppelin.com/gen), and the facilitator's `/supported` lists `exact` on `stellar:pubnet`.
+- The testnet-only `x402.org` facilitator is rejected on Mainnet.
+- `PAY_TO` exists on Mainnet: a `G…` wallet must hold a Circle USDC trustline; a `C…` contract must be deployed.
+- Because the vault is unaudited, a `C…` `PAY_TO` on Mainnet also needs `ALLOW_UNAUDITED_VAULT=yes`. Recommended until the audit: pay a `G…` wallet you control.
+- `PRICE_UNITS` must be a positive integer at or below `MAX_PRICE_UNITS` (default 1 USDC).
+
+Railway variables for Mainnet:
+```
+STELLAR_NETWORK=mainnet
+PAY_TO=G...your-wallet
+FACILITATOR_API_KEY=...
+PRICE_UNITS=100000        # 0.01 USDC
+```
+
+First real payment (spends real USDC; capped at 10 requests per run):
+```
+cd demo && npm install
+STELLAR_NETWORK=mainnet PAYER_SECRET=S... node setup-trustline.mjs     # once; account needs >= 1.5 XLM
+STELLAR_NETWORK=mainnet CONFIRM_MAINNET=yes URL=https://<your-host>/weather PAYER_SECRET=S... node pay.mjs 1
+```
+Each settled payment is logged by the server as `[paid] … tx=<hash>` with a stellar.expert link. Work through `docs/MAINNET-CHECKLIST.md` before opening to traffic.
+
 ## Testnet deployment
 Vault: `CDGZHCOHFAM4UCIF5PQZSYK7WXPYD77BNT2YZNSHZRUTOY42EQUPNJ65` ([stellar.expert](https://stellar.expert/explorer/testnet/contract/CDGZHCOHFAM4UCIF5PQZSYK7WXPYD77BNT2YZNSHZRUTOY42EQUPNJ65)), deposit allowlist = Testnet USDC. Storage is renewed weekly with `extend_ttl`.
 
 Previous build (no allowlist): `CCYIVV2DDYTTCJATQDBRJGQRY27E2XK5UT5E2Y2P2OMS53EJR2SMPU7G`, where an end-to-end x402 pay-and-withdraw run passed, including rejection of a non-owner withdrawal.
 
-Status: unaudited. Do not use on mainnet until the checklist is complete.
+Status: unaudited. The server can run on Mainnet paying a wallet (`G…`); paying the vault contract on Mainnet requires explicit opt-in until the audit and checklist are complete.
 
 ## License
 MIT. See `LICENSE`.
