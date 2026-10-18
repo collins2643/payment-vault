@@ -23,20 +23,22 @@ Scope: moving the x402 Express server and Soroban Payment Vault from testnet to 
 ## 4. Assets and addresses
 - [ ] Mainnet USDC SAC: `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75` (Circle issuer `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN`). Never the testnet `CBIELTK6…`.
 - [ ] Withdrawal destination wallet has a USDC trustline, and the issuer starts with `GA5ZSEJY`.
-- [ ] `STELLAR_PAY_TO` = vault `C…` address; startup check confirms a contract exists there and it isn't the USDC contract itself.
+- [ ] `PAY_TO` = vault `C…` address (or a `G…` wallet); startup check confirms a contract exists there (or the wallet has a Circle USDC trustline) and it isn't the USDC contract itself. Paying a `C…` vault on mainnet also requires `ALLOW_UNAUDITED_VAULT=yes` until the audit is done.
 - [ ] Double-check every address by pasting it into a block explorer (stellar.expert) rather than retyping.
 
 ## 5. Facilitator
-- [ ] Pick a facilitator that lists `exact` / `stellar:pubnet` in its `/supported` response (the public `x402.org/facilitator` is testnet-only).
-- [ ] API key (if required) stored as a host secret, not in the repo.
+- [ ] Pick a facilitator that lists `exact` / `stellar:pubnet` in its `/supported` response (the public `x402.org/facilitator` is testnet-only). Default: Built on Stellar / OpenZeppelin, `https://channels.openzeppelin.com/x402`. The server checks `/supported` at startup and refuses to run if mainnet isn't listed.
+- [ ] API key from https://channels.openzeppelin.com/gen stored as the host secret `FACILITATOR_API_KEY`, not in the repo.
 - [ ] Confirm it sponsors fees (`areFeesSponsored: true`) or budget for payer fees.
 - [ ] Understand its limits: max fee cap, rate limits, uptime/SLA, settlement latency.
 
 ## 6. Server configuration
 - [ ] `.env` on the host:
-  - `STELLAR_NETWORK=stellar:pubnet`
-  - `STELLAR_PAY_TO=<vault C… address>`
-  - `FACILITATOR_URL=<mainnet facilitator>`
+  - `STELLAR_NETWORK=mainnet` (also accepts `pubnet` / `stellar:pubnet`)
+  - `PAY_TO=<wallet G… or vault C… address>`
+  - `FACILITATOR_URL=https://channels.openzeppelin.com/x402` (default on mainnet)
+  - `FACILITATOR_API_KEY=<key>`
+  - `PRICE_UNITS=<raw units>`; startup refuses prices above `MAX_PRICE_UNITS` (default 1 USDC)
   - Mainnet IDs for any other enabled chain (`eip155:8453`, `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp`, `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k`), or leave their `*_PAY_TO` blank to disable them.
 - [ ] Prices reviewed in real dollars (Stellar USDC has 7 decimals: `$0.001` = 10000 units).
 - [ ] All `@x402/*` packages pinned to the same version (currently 2.27.0); lockfile committed.
@@ -44,7 +46,7 @@ Scope: moving the x402 Express server and Soroban Payment Vault from testnet to 
 - [ ] Handlers idempotent: settlement runs after a successful (<400) response, so failed settlements must not double-deliver or double-charge.
 
 ## 7. Monitoring and operations
-- [ ] Log every `PAYMENT-RESPONSE` transaction hash with the request ID.
+- [ ] Log every `PAYMENT-RESPONSE` transaction hash with the request ID. (The x402 server prints a `[paid] … tx=…` line with a stellar.expert link for each settlement.)
 - [ ] Alert on 402 error spikes, facilitator errors, and settlement failures.
 - [ ] Daily reconciliation: sum of settled payments vs. vault USDC `balance()`.
 - [ ] Withdrawal schedule set (e.g. weekly `withdraw_all` to the owner/treasury wallet) to limit funds held in the contract.
