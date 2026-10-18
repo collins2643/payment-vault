@@ -39,6 +39,21 @@ stellar contract deploy --wasm target/wasm32v1-none/release/payment_vault.wasm \
 ```
 Use the printed C... address as x402 `payTo`. Before the first x402 payment, send the vault a tiny amount of USDC (e.g. 0.0001): a vault that has never held USDC rejects its first payment with `fee_exceeds_maximum`, whichever facilitator you use.
 
+### Facilitator fee limit
+A USDC payment into the vault costs about 140,000 stroops (0.014 XLM) in network fees, versus about 24,000 to a regular `G...` wallet, because it writes contract storage. The public `x402.org` facilitator caps fees at 50,000 stroops, so it rejects vault payments with `fee_exceeds_maximum` even after the vault already holds USDC (observed on Testnet, 2026-10-09). Use the self-hosted facilitator instead:
+
+```
+cd x402 && npm install
+npm run facilitator                                   # terminal 1: :4022, testnet, throwaway fee payer
+FACILITATOR_URL=http://localhost:4022 npm start       # terminal 2: :4021, payTo = vault
+cd ../demo && PAYER_SECRET=... node pay.mjs 1         # terminal 3
+node balance.mjs                                      # vault USDC balance went up by 10000 units
+```
+
+The facilitator pays settlement fees from its own account. Set `FACILITATOR_API_KEY` (same value on both services) whenever it is reachable from the internet, or anyone can spend its XLM. See `x402/.env.facilitator.example`.
+
+Verified run: 0.001 USDC settled to vault `CDGZ…PNJ65` in [7c7ef7de…62ff5e](https://stellar.expert/explorer/testnet/tx/7c7ef7de7c88847c4972facffebe7c3a6ba9263de62f761bbd7067860762ff5e) (fee 125,301 stroops); vault balance 1,000,000 → 1,010,000 units.
+
 ## Withdraw
 ```
 stellar contract invoke --id <vault C...> --source <owner-key> --network testnet -- \
@@ -54,6 +69,8 @@ Not audited. Test on testnet before using real money, and keep the owner key saf
 - `x402/` — x402 server config that sends Stellar payments to the vault (`payTo` = vault `C...`, `asset` = USDC SAC). Run: `cd x402 && cp .env.example .env && npm install && npm start` (defaults to testnet)
 - `express-server/` — multi-network x402 Express server (EVM, Solana, Algorand, Stellar). Run: `cd express-server && cp .env.example .env && npm install && npm start`
 - `demo/setup-trustline.mjs` — one-time payer setup: Friendbot funding, Circle Testnet USDC trustline (`GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`), and verification of an active 0-balance trustline. Run before `pay.mjs`: `cd demo && npm install && PAYER_SECRET=$(stellar keys show demo-payer) node setup-trustline.mjs` (omit `PAYER_SECRET` to generate a new account). Then fund the payer from Circle's Testnet faucet.
+- `x402/facilitator.ts` — self-hosted x402 facilitator (verify + settle) with a configurable fee ceiling for vault payments. Run: `cd x402 && npm run facilitator`
+- `demo/balance.mjs` — read-only check of the vault's USDC balance and owner. Run: `cd demo && node balance.mjs [vault C...]`
 - `demo/pay.mjs` — paying x402 client for the Testnet demo. Run: `cd demo && npm install && PAYER_SECRET=$(stellar keys show demo-payer) node pay.mjs 3` (secret comes from the environment only)
 - `docs/MAINNET-CHECKLIST.md` — steps before accepting real payments
 

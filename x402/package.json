@@ -2,7 +2,8 @@
   "name": "payment-vault-x402",
   "type": "module",
   "scripts": {
-    "start": "tsx --env-file-if-exists=.env server.ts"
+    "start": "tsx --env-file-if-exists=.env server.ts",
+    "facilitator": "tsx --env-file-if-exists=.env.facilitator facilitator.ts"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "17.1.0",
