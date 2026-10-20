@@ -1,0 +1,22 @@
+name: x402 audit tests
+on:
+  push:
+    paths: ["x402/**", ".github/workflows/x402-test.yml"]
+  pull_request:
+    paths: ["x402/**", ".github/workflows/x402-test.yml"]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: x402
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: x402/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
