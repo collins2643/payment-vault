@@ -2,6 +2,8 @@
 
 A simple contract that can receive tokens (like USDC) and lets only the owner move them out.
 
+**Live Testnet demo:** https://payment-vault-production-38e9.up.railway.app (press "Pay 0.001 USDC" to watch a payment settle into the vault). Evidence and transaction links: [docs/EVIDENCE.md](docs/EVIDENCE.md).
+
 ## Functions
 - `__constructor(owner, allowed_tokens)`: runs once at deploy. Rejects the vault's own address as owner (`InvalidOwner`).
 - `owner()`: shows who owns the vault
@@ -40,11 +42,11 @@ stellar contract deploy --wasm target/wasm32v1-none/release/payment_vault.wasm \
 Use the printed C... address as x402 `payTo`. Before the first x402 payment, send the vault a tiny amount of USDC (e.g. 0.0001): a vault that has never held USDC rejects its first payment with `fee_exceeds_maximum`, whichever facilitator you use.
 
 ### Facilitator fee limit
-A USDC payment into the vault costs about 140,000 stroops (0.014 XLM) in network fees, versus about 24,000 to a regular `G...` wallet, because it writes contract storage. The public `x402.org` facilitator caps fees at 50,000 stroops, so it rejects vault payments with `fee_exceeds_maximum` even after the vault already holds USDC (observed on Testnet, 2026-10-09). Use the self-hosted facilitator instead:
+A USDC payment into the vault costs about 140,000 to 340,000 stroops (0.014 to 0.034 XLM) in network fees (the estimate rose to ~334,000 on Testnet by 2026-10-19), versus about 24,000 to a regular `G...` wallet, because it writes contract storage. The public `x402.org` facilitator caps fees at 50,000 stroops, so it rejects vault payments with `fee_exceeds_maximum` even after the vault already holds USDC (observed on Testnet, 2026-10-09). Use the self-hosted facilitator instead:
 
 ```
 cd x402 && npm install
-npm run facilitator                                   # terminal 1: :4022, testnet, throwaway fee payer
+npm run facilitator                                   # terminal 1: :4022, testnet, throwaway fee payer, 1,000,000-stroop ceiling
 FACILITATOR_URL=http://localhost:4022 npm start       # terminal 2: :4021, payTo = vault
 cd ../demo && PAYER_SECRET=... node pay.mjs 1         # terminal 3
 node balance.mjs                                      # vault USDC balance went up by 10000 units
@@ -73,6 +75,8 @@ Not audited. Test on testnet before using real money, and keep the owner key saf
 - `demo/balance.mjs` — read-only check of the vault's USDC balance and owner. Run: `cd demo && node balance.mjs [vault C...]`
 - `demo/pay.mjs` — paying x402 client for the Testnet demo. Run: `cd demo && npm install && PAYER_SECRET=$(stellar keys show demo-payer) node pay.mjs 3` (secret comes from the environment only)
 - `docs/MAINNET-CHECKLIST.md` — steps before accepting real payments
+### Reviewer demo page
+`GET /` serves a one-page demo: live vault balance and owner (read from Stellar RPC), recent settlements and on-chain evidence with stellar.expert links, and a **Pay 0.001 USDC** button. The button calls `POST /api/demo-pay`, which pays the server's own `/weather` route from `DEMO_PAYER_SECRET`, a separate low-balance Testnet wallet, and returns the HTTP status, settlement transaction and vault balance before and after. It is disabled on Mainnet and when `DEMO_PAYER_SECRET` is unset, and is capped at `DEMO_MAX_PER_HOUR` (20) overall and `DEMO_MAX_PER_IP_PER_HOUR` (3) per visitor. `GET /api/status` returns the same data as JSON. Never use the vault owner key as the demo payer.
 
 ## Testnet deployment
 Vault: `CDGZHCOHFAM4UCIF5PQZSYK7WXPYD77BNT2YZNSHZRUTOY42EQUPNJ65` ([stellar.expert](https://stellar.expert/explorer/testnet/contract/CDGZHCOHFAM4UCIF5PQZSYK7WXPYD77BNT2YZNSHZRUTOY42EQUPNJ65)), deposit allowlist = Testnet USDC. Storage is renewed weekly with `extend_ttl`.

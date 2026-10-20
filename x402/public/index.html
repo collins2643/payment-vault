@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payment Vault: pay-per-request USDC on Stellar</title>
+<meta name="description" content="Live Stellar Testnet demo: x402 paid API requests settle into a Soroban vault contract with owner-only withdrawals.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%230f6e63'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&f[]=jetbrains-mono@400,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f7f5; --surface: #ffffff; --ink: #14181c; --muted: #5b6570; --line: #dfe3e1;
+    --accent: #0f6e63; --accent-ink: #ffffff; --accent-soft: #e3f1ee; --warn: #8a4b00; --warn-soft: #fbf0e1;
+    --bad: #a12a2a; --bad-soft: #f8e6e6; --radius: 10px;
+    --sans: "General Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--sans); }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 64px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand { font-weight: 600; letter-spacing: -0.01em; }
+  .pill { font: 500 12px/1 var(--mono); padding: 6px 10px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
+  h1 { font-size: clamp(28px, 4.2vw, 42px); line-height: 1.12; letter-spacing: -0.02em; margin: 40px 0 12px; max-width: 22ch; font-weight: 600; }
+  .lede { color: var(--muted); max-width: 60ch; margin: 0 0 32px; font-size: 17px; }
+  .grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 14px; font-weight: 500; }
+  .balance { font: 500 clamp(30px, 5vw, 40px)/1.1 var(--mono); letter-spacing: -0.02em; }
+  .balance small { font-size: 15px; color: var(--muted); margin-left: 6px; }
+  .delta { font: 500 14px var(--mono); color: var(--accent); min-height: 22px; margin-top: 6px; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; margin: 18px 0 0; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+  button { font: 600 16px var(--sans); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 14px 20px; cursor: pointer; width: 100%; }
+  button:hover { filter: brightness(1.08); }
+  button:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+  button:disabled { opacity: 0.55; cursor: progress; }
+  .steps { margin: 0 0 18px; padding-left: 20px; color: var(--muted); font-size: 14px; }
+  .steps li { margin-bottom: 4px; }
+  .result { margin-top: 14px; font-size: 14px; min-height: 20px; }
+  .result.ok { color: var(--accent); }
+  .result.err { color: var(--bad); }
+  .links { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 14px; }
+  section { margin-top: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-weight: 500; color: var(--muted); padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.mono { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  .tag { display: inline-block; font: 500 11px/1 var(--mono); padding: 4px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); margin-right: 6px; }
+  .tag.bad { background: var(--bad-soft); color: var(--bad); }
+  .rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 760px) { .rules { grid-template-columns: 1fr; } }
+  .rules h3 { font-size: 16px; margin: 0 0 6px; font-weight: 600; }
+  .rules p { margin: 0; color: var(--muted); font-size: 14px; }
+  .skeleton { display: inline-block; width: 9ch; height: 1em; border-radius: 6px; background: linear-gradient(90deg, #eceeed, #f6f7f6, #eceeed); background-size: 200% 100%; animation: sh 1.2s infinite; }
+  @keyframes sh { to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  .scroll { overflow-x: auto; }
+  @media (max-width: 600px) {
+    thead { display: none; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    tr { padding: 12px 0; border-bottom: 1px solid var(--line); }
+    td { border: 0; padding: 2px 0; }
+    td.mono { color: var(--muted); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Payment Vault</div>
+    <span class="pill" id="net">Stellar Testnet</span>
+  </header>
+
+  <h1>Pay-per-request USDC that lands in a contract, not a hot wallet.</h1>
+  <p class="lede">This server sells one API response for 0.001 USDC using the x402 payment protocol. Every payment settles straight into a Soroban vault contract. Only the owner can withdraw, and anyone can keep the vault's storage alive without being able to touch the funds.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Vault balance (live, on-chain)</h2>
+      <div class="balance" id="balance"><span class="skeleton"></span></div>
+      <div class="delta" id="delta" aria-live="polite"></div>
+      <dl>
+        <dt>Vault</dt><dd id="vault">…</dd>
+        <dt>Owner</dt><dd id="owner">…</dd>
+        <dt>Asset</dt><dd>USDC (Circle Testnet)</dd>
+        <dt>Price</dt><dd id="price">…</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2>Try a paid request</h2>
+      <ol class="steps">
+        <li>The server asks for payment (HTTP 402).</li>
+        <li>A capped demo wallet signs a 0.001 USDC payment.</li>
+        <li>The payment settles into the vault and the API answers (HTTP 200).</li>
+      </ol>
+      <button id="pay" type="button">Pay 0.001 USDC and call the API</button>
+      <div class="result" id="result" aria-live="polite"></div>
+      <div class="links">
+        <a href="/weather" target="_blank" rel="noopener">See the raw 402 response</a>
+        <a href="/health" target="_blank" rel="noopener">Health check</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>On-chain record</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>When (UTC)</th><th>What happened</th><th>Transaction</th></tr></thead>
+        <tbody id="history"><tr><td colspan="3"><span class="skeleton"></span></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Rules enforced by the contract</h2>
+    <div class="rules">
+      <div><h3>Owner-only withdrawals</h3><p>Withdrawals require the owner's signature. A non-owner attempt fails on-chain (see the record above).</p></div>
+      <div><h3>Allowlisted deposits</h3><p>Only approved token contracts can be deposited. The owner controls the allowlist.</p></div>
+      <div><h3>Permissionless keep-alive</h3><p>A weekly job from a separate account extends storage TTL. It cannot move funds.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    Testnet only; the contract has not been audited yet. Source: <a href="https://github.com/collins2643/payment-vault">github.com/collins2643/payment-vault</a>
+  </footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let explorer = "https://stellar.expert/explorer/testnet";
+const fmt = (units) => (Number(units) / 1e7).toFixed(4);
+const short = (s) => s ? s.slice(0, 6) + "…" + s.slice(-6) : "—";
+const link = (path, text) => `<a href="${explorer}/${path}" target="_blank" rel="noopener">${text}</a>`;
+
+function render(s) {
+  if (s.network.includes("pubnet")) { explorer = "https://stellar.expert/explorer/public"; $("net").textContent = "Stellar Mainnet"; }
+  $("balance").innerHTML = `${fmt(s.balanceUnits)}<small>USDC</small>`;
+  $("vault").innerHTML = link(`contract/${s.vault}`, short(s.vault));
+  $("owner").innerHTML = s.owner ? link(`account/${s.owner}`, short(s.owner)) : "—";
+  $("price").textContent = `${fmt(s.priceUnits)} USDC per request`;
+  if (!s.demoEnabled) { $("pay").disabled = true; $("pay").textContent = "Demo button is off on this server"; }
+  $("history").innerHTML = s.settlements.map((e) => {
+    const bad = e.kind.startsWith("Rejected");
+    const label = bad ? "rejected" : e.kind.includes("x402") ? "payment" : e.kind.includes("keep-alive") ? "keep-alive" : e.kind.includes("withdrawal") ? "owner" : "deposit";
+    return `<tr><td class="mono">${e.at.replace("T", " ").slice(0, 16)}</td>
+      <td><span class="tag ${bad ? "bad" : ""}">${label}</span>${e.kind}${e.amount ? ` · ${fmt(e.amount)} USDC` : ""}</td>
+      <td class="mono">${link(`tx/${e.tx}`, short(e.tx))}</td></tr>`;
+  }).join("");
+}
+
+async function load() {
+  try {
+    const r = await fetch("/api/status");
+    const s = await r.json();
+    if (!r.ok) throw new Error(s.error);
+    render(s);
+  } catch (e) {
+    $("balance").textContent = "Unavailable";
+    $("history").innerHTML = `<tr><td colspan="3">Could not reach the Stellar network: ${e.message}</td></tr>`;
+  }
+}
+
+$("pay").addEventListener("click", async () => {
+  const btn = $("pay"), out = $("result");
+  btn.disabled = true; btn.textContent = "Paying and settling on Stellar…";
+  out.className = "result"; out.textContent = ""; $("delta").textContent = "";
+  try {
+    const r = await fetch("/api/demo-pay", { method: "POST" });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+    out.className = "result ok";
+    out.innerHTML = `HTTP ${d.status}: ${d.body}. Settled in ${link(`tx/${d.tx}`, short(d.tx))}.`;
+    const diff = Number(d.after) - Number(d.before);
+    if (diff > 0) $("delta").textContent = `+${fmt(diff)} USDC just now`;
+    await load();
+  } catch (e) {
+    out.className = "result err"; out.textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Pay 0.001 USDC and call the API";
+  }
+});
+
+load();
+</script>
+</body>
+</html>

@@ -5,6 +5,7 @@ import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactStellarScheme } from "@x402/stellar/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { StrKey, rpc } from "@stellar/stellar-sdk";
+import { registerDemo, type Settlement } from "./demo.ts";
 
 // ---- Settings --------------------------------------------------------------
 const MAINNET = process.env.STELLAR_NETWORK === "mainnet";
@@ -53,7 +54,21 @@ const facilitator = new HTTPFacilitatorClient({
   createAuthHeaders: headers ? async () => ({ verify: headers, settle: headers, supported: headers }) : undefined,
 });
 
+// Keep the last few settlements in memory for the demo page, and log each one.
+const settlements: Settlement[] = [];
+const explorer = `https://stellar.expert/explorer/${MAINNET ? "public" : "testnet"}/tx/`;
+const resourceServer = new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme());
+resourceServer.onAfterSettle(async ({ result, requirements }) => {
+  if (!result.success) return;
+  settlements.unshift({ tx: result.transaction, kind: "x402 payment settled into the vault",
+    at: new Date().toISOString(), amount: result.amount ?? requirements.amount, payer: result.payer });
+  settlements.splice(10);
+  console.log(`settled ${requirements.amount} units from ${result.payer}: ${explorer}${result.transaction}`);
+});
+resourceServer.onSettleFailure(async ({ error }) => { console.error(`settlement failed: ${error.message}`); });
+
 const app = express();
+app.set("trust proxy", true); // Railway sits behind a proxy; needed for per-visitor demo limits
 app.use(paymentMiddleware(
   {
     "GET /weather": {
@@ -62,10 +77,12 @@ app.use(paymentMiddleware(
       mimeType: "application/json",
     },
   },
-  new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme()),
+  resourceServer,
 ));
 app.get("/health", (_req, res) => res.send("ok")); // free route for Railway health checks
 app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
 
 const PORT = Number(process.env.PORT ?? 4021);
+registerDemo(app, { mainnet: MAINNET, network: NETWORK, payTo: PAY_TO, usdc: USDC, rpcUrl: RPC_URL, port: PORT,
+  priceUnits: PRICE_UNITS, facilitator: FACILITATOR, settlements });
 app.listen(PORT, () => console.log(`x402 server on :${PORT} (${NETWORK}), paying ${PAY_TO}`));
