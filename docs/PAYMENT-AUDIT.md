@@ -46,6 +46,36 @@ Railway supplies `RAILWAY_VOLUME_MOUNT_PATH` automatically for an attached volum
 
 This change does not provision a volume, change live variables, merge another PR, deploy, or submit any payment.
 
+## Cloudflare Workers build target
+
+This repository does not currently contain a Cloudflare Worker entry point, static-assets directory, or Wrangler configuration. Its Rust contract and long-running Express payment server are separate deployment targets; the audit server requires a Node runtime and a persistent filesystem volume.
+
+The automatic `Workers Builds: payment-vault` check fails on both the PR #8 commit and the current `main` baseline. A local, non-deploying reproduction from the repository root with Wrangler 4.86.0 is:
+
+```bash
+CI=true WRANGLER_SEND_METRICS=false \
+  npx --yes --package=node@22 --package=wrangler@4.86.0 \
+  --call 'wrangler deploy --dry-run --outdir /tmp/payment-vault-worker-dry-run'
+```
+
+Observed error:
+
+```text
+Could not detect a directory containing static files (e.g. html, css and js) for the project
+```
+
+This reproduces a repository-root target problem; it is not a substitute for the live build log. The actual Cloudflare build command/root and exact remote failure remain unverified until that log is accessible.
+
+Changing the Cloudflare root to `x402/` or adding only a Wrangler entry point is not a sufficient fix for this implementation. Cloudflare documents `node:sqlite` as a non-functional stub in Workers; importing it is not evidence that `DatabaseSync` and the filesystem audit database work there. A Workers-native implementation would need a different storage/runtime design. ([Cloudflare Node.js compatibility](https://developers.cloudflare.com/workers/runtime-apis/nodejs/))
+
+The safe resolution depends on the configured target:
+
+- **Railway-only payment server:** Correct or disconnect the accidentally attached Workers build trigger after verifying its configuration. Do not delete the Worker, change DNS, or disable repository protection just to remove a red check.
+- **Intended Cloudflare project:** Point its build trigger at an actual, separately implemented Workers project. Do not deploy the current Node/SQLite payment server as if it were Workers-compatible.
+- **Build settings versus runtime:** Changing build root/commands is an infrastructure change; a source-only PR cannot prove that live settings have been corrected. Workers Builds' root defines where its commands run. ([Cloudflare build configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/))
+
+Until the remote build configuration/log is read and the appropriate target correction is verified by a fresh check, the Workers failure is unresolved. A new source commit may retrigger it but does not by itself constitute a fix.
+
 ## Private export
 
 Run inside the server environment with access to the same database:
