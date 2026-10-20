@@ -5,6 +5,8 @@ import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactStellarScheme } from "@x402/stellar/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { StrKey, rpc } from "@stellar/stellar-sdk";
+import { AuditStore, auditPath } from "./audit-store.ts";
+import { createPaymentAudit } from "./payment-audit.ts";
 
 // ---- Settings --------------------------------------------------------------
 const MAINNET = process.env.STELLAR_NETWORK === "mainnet";
@@ -46,6 +48,13 @@ async function checkPayTo() {
 }
 
 // ---- Server ---------------------------------------------------------------
+// Open durable storage before accepting requests or contacting a payment service.
+const audit = createPaymentAudit(new AuditStore(auditPath()), {
+  network: NETWORK,
+  deploymentId: process.env.RAILWAY_DEPLOYMENT_ID,
+  serviceId: process.env.RAILWAY_SERVICE_ID,
+  environmentId: process.env.RAILWAY_ENVIRONMENT_ID,
+});
 await checkPayTo();
 const headers = FACILITATOR_KEY ? { Authorization: `Bearer ${FACILITATOR_KEY}` } : undefined;
 const facilitator = new HTTPFacilitatorClient({
@@ -54,6 +63,10 @@ const facilitator = new HTTPFacilitatorClient({
 });
 
 const app = express();
+const resourceServer = audit.attach(
+  new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme()),
+);
+app.use(audit.middleware);
 app.use(paymentMiddleware(
   {
     "GET /weather": {
@@ -62,9 +75,10 @@ app.use(paymentMiddleware(
       mimeType: "application/json",
     },
   },
-  new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme()),
+  resourceServer,
 ));
-app.get("/health", (_req, res) => res.send("ok")); // free route for Railway health checks
+app.get("/health", (_req, res) => res.status(audit.isHealthy() ? 200 : 503)
+  .send(audit.isHealthy() ? "ok" : "audit unavailable")); // free; no health-probe database growth
 app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
 
 const PORT = Number(process.env.PORT ?? 4021);

@@ -60,6 +60,12 @@ stellar contract invoke --id <vault C...> --source <owner-key> --network testnet
   withdraw_all --token <USDC contract C...> --to <your G... address>
 ```
 
+## Request-to-payment audit
+
+The x402 server now writes request IDs, settlement attempts/results, and final HTTP status to a private SQLite audit database. It does not store payment headers or signing secrets. Railway deployment requires a volume mounted at `/data` and `AUDIT_DB_PATH=/data/payment-audit.sqlite`; otherwise startup intentionally fails. Use Node >=22.13.
+
+See [the audit operations guide](docs/PAYMENT-AUDIT.md) for setup, private exports by transaction hash, backup/retention requirements, failure handling, and integration with the open reviewer-demo PR. This adds evidence for future requests, not missing logs for historical payments.
+
 Not audited. Test on testnet before using real money, and keep the owner key safe: losing it locks the funds.
 
 ## Repository layout
