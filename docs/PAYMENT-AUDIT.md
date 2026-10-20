@@ -50,7 +50,7 @@ This change does not provision a volume, change live variables, merge another PR
 
 This repository does not currently contain a Cloudflare Worker entry point, static-assets directory, or Wrangler configuration. Its Rust contract and long-running Express payment server are separate deployment targets; the audit server requires a Node runtime and a persistent filesystem volume.
 
-The automatic `Workers Builds: payment-vault` check fails on both the PR #8 commit and the current `main` baseline. A local, non-deploying reproduction from the repository root with Wrangler 4.86.0 is:
+At the initial investigation, the automatic `Workers Builds: payment-vault` check failed on both the PR #8 commit and the `main` baseline. A local, non-deploying reproduction from the repository root with Wrangler 4.86.0 is:
 
 ```bash
 CI=true WRANGLER_SEND_METRICS=false \
@@ -75,6 +75,10 @@ The safe resolution depends on the configured target:
 - **Build settings versus runtime:** Changing build root/commands is an infrastructure change; a source-only PR cannot prove that live settings have been corrected. Workers Builds' root defines where its commands run. ([Cloudflare build configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/))
 
 Until the remote build configuration/log is read and the appropriate target correction is verified by a fresh check, the Workers failure is unresolved. A new source commit may retrigger it but does not by itself constitute a fix.
+
+If the unwanted Workers build integration is removed instead, verify its absence on a fresh commit: historical failed checks can remain attached to an older commit. This does not demonstrate Workers runtime compatibility and does not resolve a separate Railway failure.
+
+The Railway PR preview examined on October 20, 2026 built a container image, then reached `CRASHED`; deployment metadata showed `rootDirectory=/x402` and `volumeMounts=[]`. This establishes a missing preview volume, not the precise crash exception, because runtime-log access was denied. Provision the required persistent storage before expecting this audit-enabled preview to start; do not remove the guard or claim an image build is a successful deployment.
 
 ## Private export
 
