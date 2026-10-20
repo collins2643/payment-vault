@@ -11,7 +11,7 @@
 // Settings (environment):
 //   FACILITATOR_SECRET     S... key that pays settlement fees. Required on mainnet. Never commit it.
 //   STELLAR_NETWORK        testnet (default) or mainnet
-//   MAX_FEE_STROOPS        fee ceiling per settlement (default 300000 = 0.03 XLM)
+//   MAX_FEE_STROOPS        fee ceiling per settlement (default 1000000 = 0.1 XLM; a vault payment cost ~334000 on Testnet in Oct 2026)
 //   FACILITATOR_API_KEY    if set, /verify and /settle require "Authorization: Bearer <key>".
 //                          Set it whenever this is reachable from the internet; otherwise anyone
 //                          can make you pay their fees. server.ts already sends this header.
@@ -25,7 +25,7 @@ import { createEd25519Signer } from "@x402/stellar";
 
 const MAINNET = process.env.STELLAR_NETWORK === "mainnet";
 const NETWORK = MAINNET ? "stellar:pubnet" : "stellar:testnet";
-const MAX_FEE = Number(process.env.MAX_FEE_STROOPS ?? 300_000);
+const MAX_FEE = Number(process.env.MAX_FEE_STROOPS ?? 1_000_000);
 const API_KEY = process.env.FACILITATOR_API_KEY;
 const PORT = Number(process.env.PORT ?? 4022);
 
