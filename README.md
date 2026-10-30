@@ -68,6 +68,7 @@ Not audited. Test on testnet before using real money, and keep the owner key saf
 - `payment_vault.wasm` — Testnet build of the contract
 - `x402/` — x402 server config that sends Stellar payments to the vault (`payTo` = vault `C...`, `asset` = USDC SAC). Run: `cd x402 && cp .env.example .env && npm install && npm start` (defaults to testnet)
 - `express-server/` — multi-network x402 Express server (EVM, Solana, Algorand, Stellar). Run: `cd express-server && cp .env.example .env && npm install && npm start`
+- `x402/coins/` — paid wheat cent valuation API (`/coins/melt`, `/coins/bulk`, `/coins/keydates`, `/coins/scenario`; free catalog at `/coins`). See `x402/coins/README.md`.
 - `demo/setup-trustline.mjs` — one-time payer setup: Friendbot funding, Circle Testnet USDC trustline (`GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`), and verification of an active 0-balance trustline. Run before `pay.mjs`: `cd demo && npm install && PAYER_SECRET=$(stellar keys show demo-payer) node setup-trustline.mjs` (omit `PAYER_SECRET` to generate a new account). Then fund the payer from Circle's Testnet faucet.
 - `x402/facilitator.ts` — self-hosted x402 facilitator (verify + settle) with a configurable fee ceiling for vault payments. Run: `cd x402 && npm run facilitator`
 - `demo/balance.mjs` — read-only check of the vault's USDC balance and owner. Run: `cd demo && node balance.mjs [vault C...]`
