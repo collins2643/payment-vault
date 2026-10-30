@@ -5,6 +5,7 @@ import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactStellarScheme } from "@x402/stellar/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { StrKey, rpc } from "@stellar/stellar-sdk";
+import { coinPaidRoutes, coinRouter } from "./coins/routes.ts";
 
 // ---- Settings --------------------------------------------------------------
 const MAINNET = process.env.STELLAR_NETWORK === "mainnet";
@@ -61,11 +62,13 @@ app.use(paymentMiddleware(
       description: "Weather data",
       mimeType: "application/json",
     },
+    ...coinPaidRoutes(NETWORK, PAY_TO, USDC), // wheat cent valuation API (coins/)
   },
   new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme()),
 ));
 app.get("/health", (_req, res) => res.send("ok")); // free route for Railway health checks
 app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
+app.use(coinRouter()); // GET /coins is free (catalog); /coins/* data routes are paid
 
 const PORT = Number(process.env.PORT ?? 4021);
 app.listen(PORT, () => console.log(`x402 server on :${PORT} (${NETWORK}), paying ${PAY_TO}`));

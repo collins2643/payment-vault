@@ -3,7 +3,8 @@
   "type": "module",
   "scripts": {
     "start": "tsx --env-file-if-exists=.env server.ts",
-    "facilitator": "tsx --env-file-if-exists=.env.facilitator facilitator.ts"
+    "facilitator": "tsx --env-file-if-exists=.env.facilitator facilitator.ts",
+    "test": "tsx --test coins/*.test.ts"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "17.1.0",
