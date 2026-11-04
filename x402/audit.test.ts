@@ -22,7 +22,7 @@ const txFor = (tag: string) => createHash("sha256").update(tag).digest("hex");
 const tagOf = (payload: PaymentPayload) => String(payload.payload.tag ?? "default");
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function fixture(t: TestContext, options: { remoteFailure?: boolean; failEvent?: AuditEvent["type"] } = {}) {
+async function fixture(t: TestContext, options: { remoteFailure?: boolean; unsuccessful?: boolean; slowHandlerMs?: number; failEvent?: AuditEvent["type"] } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "payment-audit-test-"));
   const path = join(dir, "audit.sqlite");
   const store = new AuditStore(path);
@@ -51,6 +51,7 @@ async function fixture(t: TestContext, options: { remoteFailure?: boolean; failE
       settlements++;
       await sleep((Number(tagOf(payload)) || 1) % 5);
       if (options.remoteFailure) throw new Error("FACILITATOR SECRET MUST NOT BE LOGGED");
+      if (options.unsuccessful) return { success: false, errorReason: "insufficient_funds", transaction: "", network: NETWORK, payer: PAYER };
       return { success: true, transaction: txFor(tagOf(payload)), network: NETWORK, payer: PAYER };
     },
   };
@@ -66,7 +67,10 @@ async function fixture(t: TestContext, options: { remoteFailure?: boolean; failE
       description: "Weather data", mimeType: "application/json",
     },
   }, resource));
-  app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
+  app.get("/weather", async (_req, res) => {
+    if (options.slowHandlerMs) await sleep(options.slowHandlerMs);
+    if (!res.writableEnded && !res.destroyed) res.json({ forecast: "sunny" });
+  });
   app.get("/health", (_req, res) => res.status(audit.isHealthy() ? 200 : 503).send("ok"));
   const server = await new Promise<ReturnType<typeof app.listen>>(resolve => {
     const server = app.listen(0, "127.0.0.1", () => resolve(server));
@@ -82,12 +86,12 @@ async function fixture(t: TestContext, options: { remoteFailure?: boolean; failE
     scheme: "exact", network: NETWORK, amount: "10000", asset: TOKEN, payTo: VAULT,
     maxTimeoutSeconds: 300, extra: { areFeesSponsored: true },
   };
-  async function paid(tag = "default", path = "/weather") {
+  async function paid(tag = "default", path = "/weather", signal?: AbortSignal) {
     const payment = {
       x402Version: 2, resource: { url: `${url}/weather` },
       accepted: requirements, payload: { tag },
     };
-    return fetch(`${url}${path}`, { headers: {
+    return fetch(`${url}${path}`, { signal, headers: {
       "PAYMENT-SIGNATURE": Buffer.from(JSON.stringify(payment)).toString("base64"),
       "Authorization": "Bearer AUTH_SECRET_MUST_NOT_BE_LOGGED",
       "Cookie": "session=COOKIE_SECRET_MUST_NOT_BE_LOGGED",
@@ -288,4 +292,34 @@ test("export CLI retrieves a transaction lifecycle and rejects invalid filters",
   });
   assert.equal(invalid.status, 1);
   assert.equal(invalid.stdout, "");
+});
+
+test("facilitator returning success:false never records a successful settlement", async t => {
+  const f = await fixture(t, { unsuccessful: true });
+  const response = await f.paid("declined");
+  assert.notEqual(response.status, 200);
+  const events = readAudit(f.path);
+  assert.equal(events.filter(e => e.type === "settlement.attempted").length, 1);
+  assert.ok(!events.some(e => e.type === "settlement.succeeded"));
+  assert.ok(!events.some(e => e.transaction));
+  assert.equal(events.at(-1)!.type, "request.completed");
+  assert.notEqual(events.at(-1)!.status, 200);
+  assert.ok(f.audit.isHealthy());
+});
+
+test("client disconnect before response records request.closed exactly once", async t => {
+  const f = await fixture(t, { slowHandlerMs: 150 });
+  const controller = new AbortController();
+  const pending = f.paid("disconnect", "/weather", controller.signal).catch(() => undefined);
+  await sleep(20);
+  controller.abort();
+  await pending;
+  await sleep(300);
+  const events = readAudit(f.path);
+  const ends = events.filter(e => e.type === "request.completed" || e.type === "request.closed");
+  assert.equal(events[0].type, "request.started");
+  assert.equal(ends.length, 1);
+  assert.equal(ends[0].type, "request.closed");
+  assert.equal(ends[0].status, undefined);
+  assert.ok(f.audit.isHealthy());
 });

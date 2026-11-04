@@ -7,6 +7,7 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 import { StrKey, rpc } from "@stellar/stellar-sdk";
 import { AuditStore, auditPath } from "./audit-store.ts";
 import { createPaymentAudit } from "./payment-audit.ts";
+import { coinPaidRoutes, coinRouter } from "./coins/routes.ts";
 
 // ---- Settings --------------------------------------------------------------
 const MAINNET = process.env.STELLAR_NETWORK === "mainnet";
@@ -74,12 +75,14 @@ app.use(paymentMiddleware(
       description: "Weather data",
       mimeType: "application/json",
     },
+    ...coinPaidRoutes(NETWORK, PAY_TO, USDC), // wheat cent valuation API (coins/)
   },
   resourceServer,
 ));
 app.get("/health", (_req, res) => res.status(audit.isHealthy() ? 200 : 503)
   .send(audit.isHealthy() ? "ok" : "audit unavailable")); // free; no health-probe database growth
 app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
+app.use(coinRouter()); // GET /coins is free (catalog); /coins/* data routes are paid
 
 const PORT = Number(process.env.PORT ?? 4021);
 app.listen(PORT, () => console.log(`x402 server on :${PORT} (${NETWORK}), paying ${PAY_TO}`));

@@ -4,7 +4,7 @@
   "scripts": {
     "start": "tsx --env-file-if-exists=.env server.ts",
     "facilitator": "tsx --env-file-if-exists=.env.facilitator facilitator.ts",
-    "test": "node --import tsx --test audit.test.ts",
+    "test": "node --import tsx --test audit.test.ts coins/*.test.ts",
     "typecheck": "tsc --noEmit",
     "audit:export": "tsx --env-file-if-exists=.env audit-export.ts"
   },
