@@ -6,6 +6,7 @@ import { ExactStellarScheme } from "@x402/stellar/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { StrKey, rpc } from "@stellar/stellar-sdk";
 import { registerDemo, type Settlement } from "./demo.ts";
+import { coinPaidRoutes, coinRouter } from "./coins/routes.ts";
 
 // ---- Settings --------------------------------------------------------------
 const MAINNET = process.env.STELLAR_NETWORK === "mainnet";
@@ -76,11 +77,13 @@ app.use(paymentMiddleware(
       description: "Weather data",
       mimeType: "application/json",
     },
+    ...coinPaidRoutes(NETWORK, PAY_TO, USDC), // wheat cent valuation API (coins/)
   },
   resourceServer,
 ));
 app.get("/health", (_req, res) => res.send("ok")); // free route for Railway health checks
 app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
+app.use(coinRouter()); // GET /coins is free (catalog); /coins/* data routes are paid
 
 const PORT = Number(process.env.PORT ?? 4021);
 registerDemo(app, { mainnet: MAINNET, network: NETWORK, payTo: PAY_TO, usdc: USDC, rpcUrl: RPC_URL, port: PORT,
