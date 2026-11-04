@@ -5,6 +5,8 @@ import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { ExactStellarScheme } from "@x402/stellar/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { StrKey, rpc } from "@stellar/stellar-sdk";
+import { AuditStore, auditPath } from "./audit-store.ts";
+import { createPaymentAudit } from "./payment-audit.ts";
 import { registerDemo, type Settlement } from "./demo.ts";
 import { coinPaidRoutes, coinRouter } from "./coins/routes.ts";
 
@@ -48,6 +50,15 @@ async function checkPayTo() {
 }
 
 // ---- Server ---------------------------------------------------------------
+// Open durable storage before accepting requests or contacting a payment service.
+const audit = createPaymentAudit(new AuditStore(auditPath()), {
+  network: NETWORK,
+  deploymentId: process.env.RAILWAY_DEPLOYMENT_ID,
+  serviceId: process.env.RAILWAY_SERVICE_ID,
+  environmentId: process.env.RAILWAY_ENVIRONMENT_ID,
+  // Every paid route must be listed: settlement on an unaudited route is aborted (fail closed).
+  routes: ["GET /weather", ...Object.keys(coinPaidRoutes(NETWORK, PAY_TO, USDC))],
+});
 await checkPayTo();
 const headers = FACILITATOR_KEY ? { Authorization: `Bearer ${FACILITATOR_KEY}` } : undefined;
 const facilitator = new HTTPFacilitatorClient({
@@ -58,7 +69,9 @@ const facilitator = new HTTPFacilitatorClient({
 // Keep the last few settlements in memory for the demo page, and log each one.
 const settlements: Settlement[] = [];
 const explorer = `https://stellar.expert/explorer/${MAINNET ? "public" : "testnet"}/tx/`;
-const resourceServer = new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme());
+const resourceServer = audit.attach(
+  new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme()),
+);
 resourceServer.onAfterSettle(async ({ result, requirements }) => {
   if (!result.success) return;
   settlements.unshift({ tx: result.transaction, kind: "x402 payment settled into the vault",
@@ -70,6 +83,7 @@ resourceServer.onSettleFailure(async ({ error }) => { console.error(`settlement 
 
 const app = express();
 app.set("trust proxy", true); // Railway sits behind a proxy; needed for per-visitor demo limits
+app.use(audit.middleware);
 app.use(paymentMiddleware(
   {
     "GET /weather": {
@@ -81,7 +95,8 @@ app.use(paymentMiddleware(
   },
   resourceServer,
 ));
-app.get("/health", (_req, res) => res.send("ok")); // free route for Railway health checks
+app.get("/health", (_req, res) => res.status(audit.isHealthy() ? 200 : 503)
+  .send(audit.isHealthy() ? "ok" : "audit unavailable")); // free; no health-probe database growth
 app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
 app.use(coinRouter()); // GET /coins is free (catalog); /coins/* data routes are paid
 

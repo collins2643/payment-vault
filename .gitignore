@@ -2,4 +2,8 @@ target/
 node_modules/
 .env
 *.log
+.audit/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 test_snapshots/
