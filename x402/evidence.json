@@ -1,0 +1,50 @@
+[
+  {
+    "tx": "2b5f9c1773c1ac8a0d76fc8885f8d2dca08b9be52c22d8aa217f837cfaf7a659",
+    "kind": "x402 payment settled into the vault (demo button)",
+    "at": "2026-10-20T03:56:32Z",
+    "amount": "10000"
+  },
+  {
+    "tx": "0b3618a7641dc1566f7fb8f7c1262ecd8f0eebb2faa760d8b4d6930511968534",
+    "kind": "x402 payment settled into the vault (demo button)",
+    "at": "2026-10-20T03:55:57Z",
+    "amount": "10000"
+  },
+  {
+    "tx": "25be1ef0412665ff4ca02b08f973c87accaf68f14680e085b325572bd03d01f2",
+    "kind": "Rejected: withdrawal attempt by a non-owner (fails on-chain)",
+    "at": "2026-10-20T03:50:37Z"
+  },
+  {
+    "tx": "1115bf08cb1062b4ba83acbdc1b54d8d037e2fe1a7abf42f5a514bebcdaa2755",
+    "kind": "Weekly keep-alive (extend_ttl) from a non-owner account",
+    "at": "2026-10-19T13:00:47Z"
+  },
+  {
+    "tx": "6ba2503bc4b76a45ad7cccdd64b02ed1ec8d6b226a08c7d8f2eab582ad468792",
+    "kind": "Weekly keep-alive (extend_ttl)",
+    "at": "2026-10-12T13:00:32Z"
+  },
+  {
+    "tx": "7c7ef7de7c88847c4972facffebe7c3a6ba9263de62f761bbd7067860762ff5e",
+    "kind": "x402 payment settled into the vault",
+    "at": "2026-10-09T04:39:17Z",
+    "amount": "10000"
+  },
+  {
+    "tx": "4789d70d1e6e51453c82b4c5f51cc1aaf74022a4fb9d55477c413e425541554c",
+    "kind": "Weekly keep-alive (extend_ttl)",
+    "at": "2026-10-05T13:00:52Z"
+  },
+  {
+    "tx": "f5721f59260f558eb1035cd94d22311a1e8ef1f3b4148eb340a35debeefcdfa8",
+    "kind": "Owner withdrawal (owner-signed)",
+    "at": "2026-10-03T16:43:52Z"
+  },
+  {
+    "tx": "ee78a2c4e0946b93a12bcb93885339a0e6985f273f9b0fc5e68320e28fc34913",
+    "kind": "Deposit into the vault",
+    "at": "2026-10-03T16:42:57Z"
+  }
+]
