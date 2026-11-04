@@ -7,6 +7,7 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 import { StrKey, rpc } from "@stellar/stellar-sdk";
 import { AuditStore, auditPath } from "./audit-store.ts";
 import { createPaymentAudit } from "./payment-audit.ts";
+import { registerDemo, type Settlement } from "./demo.ts";
 import { coinPaidRoutes, coinRouter } from "./coins/routes.ts";
 
 // ---- Settings --------------------------------------------------------------
@@ -55,6 +56,8 @@ const audit = createPaymentAudit(new AuditStore(auditPath()), {
   deploymentId: process.env.RAILWAY_DEPLOYMENT_ID,
   serviceId: process.env.RAILWAY_SERVICE_ID,
   environmentId: process.env.RAILWAY_ENVIRONMENT_ID,
+  // Every paid route must be listed: settlement on an unaudited route is aborted (fail closed).
+  routes: ["GET /weather", ...Object.keys(coinPaidRoutes(NETWORK, PAY_TO, USDC))],
 });
 await checkPayTo();
 const headers = FACILITATOR_KEY ? { Authorization: `Bearer ${FACILITATOR_KEY}` } : undefined;
@@ -63,10 +66,23 @@ const facilitator = new HTTPFacilitatorClient({
   createAuthHeaders: headers ? async () => ({ verify: headers, settle: headers, supported: headers }) : undefined,
 });
 
-const app = express();
+// Keep the last few settlements in memory for the demo page, and log each one.
+const settlements: Settlement[] = [];
+const explorer = `https://stellar.expert/explorer/${MAINNET ? "public" : "testnet"}/tx/`;
 const resourceServer = audit.attach(
   new x402ResourceServer(facilitator).register(NETWORK, new ExactStellarScheme()),
 );
+resourceServer.onAfterSettle(async ({ result, requirements }) => {
+  if (!result.success) return;
+  settlements.unshift({ tx: result.transaction, kind: "x402 payment settled into the vault",
+    at: new Date().toISOString(), amount: result.amount ?? requirements.amount, payer: result.payer });
+  settlements.splice(10);
+  console.log(`settled ${requirements.amount} units from ${result.payer}: ${explorer}${result.transaction}`);
+});
+resourceServer.onSettleFailure(async ({ error }) => { console.error(`settlement failed: ${error.message}`); });
+
+const app = express();
+app.set("trust proxy", true); // Railway sits behind a proxy; needed for per-visitor demo limits
 app.use(audit.middleware);
 app.use(paymentMiddleware(
   {
@@ -85,4 +101,6 @@ app.get("/weather", (_req, res) => res.json({ forecast: "sunny" }));
 app.use(coinRouter()); // GET /coins is free (catalog); /coins/* data routes are paid
 
 const PORT = Number(process.env.PORT ?? 4021);
+registerDemo(app, { mainnet: MAINNET, network: NETWORK, payTo: PAY_TO, usdc: USDC, rpcUrl: RPC_URL, port: PORT,
+  priceUnits: PRICE_UNITS, facilitator: FACILITATOR, settlements });
 app.listen(PORT, () => console.log(`x402 server on :${PORT} (${NETWORK}), paying ${PAY_TO}`));
