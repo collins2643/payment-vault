@@ -31,6 +31,8 @@ client (agent / app) ──HTTP──▶ x402 server ──verify/settle──�
 
 | Date (UTC) | Event | Transaction |
 |---|---|---|
+| 2026-11-06 | **First hosted x402 payment** on Railway: `GET /weather` on `x402payment-vault-x402-payment-facilitator.up.railway.app`, settled by the Railway `x402-facilitator` service; 0.001 USDC; vault 1,100,000 → 1,110,000 units; fee 10,887 stroops; request ID `058342b6-f1ca-4753-a942-ae95bccb7499` | [ab15d04d…92e8ba](https://stellar.expert/explorer/testnet/tx/ab15d04d743e572f2fb080068f74744474cca23826fb3b45efe862219c92e8ba) |
+| 2026-11-06 | x402 payment, local server + facilitator on `@x402` 2.30.0 (PR #10, Testnet protocol 30); vault 1,090,000 → 1,100,000 units | [45ca73e7…d32c](https://stellar.expert/explorer/testnet/tx/45ca73e7b8ab5717e9e670572e80fb0f7b322bc9b0b28038c686cffcf656d32c) |
 | 2026-10-20 | x402 payment via the demo button, 0.001 USDC into the vault (local server + self-hosted facilitator) | [2b5f9c17…f7a659](https://stellar.expert/explorer/testnet/tx/2b5f9c1773c1ac8a0d76fc8885f8d2dca08b9be52c22d8aa217f837cfaf7a659) |
 | 2026-10-20 | x402 payment via the demo button, 0.001 USDC; vault 1,020,000 → 1,030,000 units; fee 291,559 stroops paid by the facilitator | [0b3618a7…968534](https://stellar.expert/explorer/testnet/tx/0b3618a7641dc1566f7fb8f7c1262ecd8f0eebb2faa760d8b4d6930511968534) |
 | 2026-10-20 | **Rejected:** a non-owner account submitted `withdraw`; the transaction fails because the owner's authorization is missing | [25be1ef0…3d01f2](https://stellar.expert/explorer/testnet/tx/25be1ef0412665ff4ca02b08f973c87accaf68f14680e085b325572bd03d01f2) |
@@ -41,7 +43,7 @@ client (agent / app) ──HTTP──▶ x402 server ──verify/settle──�
 | 2026-10-03 | Owner-signed withdrawal | [f5721f59…fcdfa8](https://stellar.expert/explorer/testnet/tx/f5721f59260f558eb1035cd94d22311a1e8ef1f3b4148eb340a35debeefcdfa8) |
 | 2026-10-03 | Deposit into the vault | [ee78a2c4…c34913](https://stellar.expert/explorer/testnet/tx/ee78a2c4e0946b93a12bcb93885339a0e6985f273f9b0fc5e68320e28fc34913) |
 
-Hosted settlement on the public Railway URL: **pending** until the `x402-facilitator` service is deployed there. Add the first hosted transaction here when it lands.
+Hosted settlement on Railway: **verified** on 2026-11-06 (transaction `ab15d04d…92e8ba` above), after PR #10 upgraded `@x402/*` to 2.30.0 for Testnet protocol 30. Audit retention across a real Railway restart is not yet verified.
 
 ## Tests
 
