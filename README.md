@@ -2,7 +2,7 @@
 
 A simple contract that can receive tokens (like USDC) and lets only the owner move them out.
 
-**Live Testnet demo:** https://payment-vault-production-38e9.up.railway.app (press "Pay 0.001 USDC" to watch a payment settle into the vault). Evidence and transaction links: [docs/EVIDENCE.md](docs/EVIDENCE.md).
+**Live Testnet demo:** https://x402payment-vault-x402-payment-facilitator.up.railway.app (press "Pay 0.001 USDC" to watch a payment settle into the vault). Evidence and transaction links: [docs/EVIDENCE.md](docs/EVIDENCE.md).
 
 ## Functions
 - `__constructor(owner, allowed_tokens)`: runs once at deploy. Rejects the vault's own address as owner (`InvalidOwner`).

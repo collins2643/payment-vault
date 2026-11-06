@@ -1,6 +1,6 @@
 # Payment Vault: Evidence Pack
 
-Everything below can be checked independently on Stellar Testnet. Last updated 2026-10-20.
+Everything below can be checked independently on Stellar Testnet. Last updated 2026-11-06.
 
 ## What it is
 
@@ -19,7 +19,7 @@ client (agent / app) ──HTTP──▶ x402 server ──verify/settle──�
 
 | Item | Value |
 |---|---|
-| Live demo | https://payment-vault-production-38e9.up.railway.app |
+| Live demo | https://x402payment-vault-x402-payment-facilitator.up.railway.app |
 | Source | https://github.com/collins2643/payment-vault (MIT) |
 | Vault contract (Testnet) | [`CDGZHCOHFAM4UCIF5PQZSYK7WXPYD77BNT2YZNSHZRUTOY42EQUPNJ65`](https://stellar.expert/explorer/testnet/contract/CDGZHCOHFAM4UCIF5PQZSYK7WXPYD77BNT2YZNSHZRUTOY42EQUPNJ65) |
 | WASM SHA-256 | `0a6825847e7bba03c1fae344b56b302809184c42b7f98d5d5ee4a4e85fd68e47` |
