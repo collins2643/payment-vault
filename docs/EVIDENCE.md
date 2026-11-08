@@ -1,6 +1,6 @@
 # Payment Vault: Evidence Pack
 
-Everything below can be checked independently on Stellar Testnet. Last updated 2026-11-06.
+Everything below can be checked independently on Stellar Testnet. Last updated 2026-11-08.
 
 ## What it is
 
@@ -25,12 +25,14 @@ client (agent / app) ──HTTP──▶ x402 server ──verify/settle──�
 | WASM SHA-256 | `0a6825847e7bba03c1fae344b56b302809184c42b7f98d5d5ee4a4e85fd68e47` |
 | Owner | [`GCNFTFXLRJOBXPNTCMQNGIZ5QRAOMCPBXFN55UMBFQX7JT6272GRDPYL`](https://stellar.expert/explorer/testnet/account/GCNFTFXLRJOBXPNTCMQNGIZ5QRAOMCPBXFN55UMBFQX7JT6272GRDPYL) |
 | Accepted asset | Circle Testnet USDC SAC `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
-| Price | 0.001 USDC (10,000 units) per `GET /weather` |
+| Price | 0.001 USDC (10,000 units) per paid request (`GET /weather`, `GET /coins/melt`, `/coins/bulk`, `/coins/keydates`, `/coins/scenario`) |
 
 ## On-chain record
 
 | Date (UTC) | Event | Transaction |
 |---|---|---|
+| 2026-11-08 | **First hosted paid `/coins` request** on Railway: `GET /coins/melt?coins=5000` on `x402payment-vault-x402-payment-facilitator.up.railway.app`, paid from a fresh Testnet wallet ([`GDYPYSM5…S6W2`](https://stellar.expert/explorer/testnet/account/GDYPYSM5XNW2MRT7UHXYCQILCNPPOVSTCX7QK765RJ46ZLMFDAW2S6W2)); HTTP 200 with melt valuation; 0.001 USDC; vault 1,120,000 → 1,130,000 units; fee 10,887 stroops; request ID `08683433-f5ae-44c7-a0c3-7b6867516524` | [15da8b69…5ae7](https://stellar.expert/explorer/testnet/tx/15da8b6932d3c7de918bf0198f0ef84ef84b353584c81811f078ef9055de5ae7) |
+| 2026-11-08 | Hosted demo button (`POST /api/demo-pay`) on the live demo, paying `GET /weather` from the demo wallet [`GB2X4ZMB…YD4N`](https://stellar.expert/explorer/testnet/account/GB2X4ZMB25HXVECNRYNZRXRQGCOO3MJXIK2LKEMMFXWEESYKN4B2YD4N); HTTP 200; 0.001 USDC; vault 1,110,000 → 1,120,000 units; fee 18,318 stroops | [0e1ac6b3…178e](https://stellar.expert/explorer/testnet/tx/0e1ac6b3cc6dae952e504438c1644046774d1f8b3428dd9b6d347707fa93178e) |
 | 2026-11-06 | **First hosted x402 payment** on Railway: `GET /weather` on `x402payment-vault-x402-payment-facilitator.up.railway.app`, settled by the Railway `x402-facilitator` service; 0.001 USDC; vault 1,100,000 → 1,110,000 units; fee 10,887 stroops; request ID `058342b6-f1ca-4753-a942-ae95bccb7499` | [ab15d04d…92e8ba](https://stellar.expert/explorer/testnet/tx/ab15d04d743e572f2fb080068f74744474cca23826fb3b45efe862219c92e8ba) |
 | 2026-11-06 | x402 payment, local server + facilitator on `@x402` 2.30.0 (PR #10, Testnet protocol 30); vault 1,090,000 → 1,100,000 units | [45ca73e7…d32c](https://stellar.expert/explorer/testnet/tx/45ca73e7b8ab5717e9e670572e80fb0f7b322bc9b0b28038c686cffcf656d32c) |
 | 2026-10-20 | x402 payment via the demo button, 0.001 USDC into the vault (local server + self-hosted facilitator) | [2b5f9c17…f7a659](https://stellar.expert/explorer/testnet/tx/2b5f9c1773c1ac8a0d76fc8885f8d2dca08b9be52c22d8aa217f837cfaf7a659) |
@@ -43,7 +45,7 @@ client (agent / app) ──HTTP──▶ x402 server ──verify/settle──�
 | 2026-10-03 | Owner-signed withdrawal | [f5721f59…fcdfa8](https://stellar.expert/explorer/testnet/tx/f5721f59260f558eb1035cd94d22311a1e8ef1f3b4148eb340a35debeefcdfa8) |
 | 2026-10-03 | Deposit into the vault | [ee78a2c4…c34913](https://stellar.expert/explorer/testnet/tx/ee78a2c4e0946b93a12bcb93885339a0e6985f273f9b0fc5e68320e28fc34913) |
 
-Hosted settlement on Railway: **verified** on 2026-11-06 (transaction `ab15d04d…92e8ba` above), after PR #10 upgraded `@x402/*` to 2.30.0 for Testnet protocol 30. Audit retention across a real Railway restart is not yet verified.
+Hosted settlement on Railway: **verified** on 2026-11-06 (transaction `ab15d04d…92e8ba` above), after PR #10 upgraded `@x402/*` to 2.30.0 for Testnet protocol 30. Paid `/coins` on the hosted service and the hosted demo button: **verified** on 2026-11-08 (transactions `15da8b69…5ae7` and `0e1ac6b3…178e` above). Both payments were settled by the Railway `x402-facilitator` service. Not yet verified: the raw audit row for these requests (read with `npm run audit:export -- --request-id <id>` inside the Railway service; there is no public audit endpoint) and audit retention across a real Railway restart.
 
 ## Tests
 
